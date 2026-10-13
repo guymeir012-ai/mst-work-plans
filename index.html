@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f5f4a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="תוכניות עבודה">
+<meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<style>body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}</style>
+</head>
+<body>
+<title>תוכניות עבודה</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Assistant:wght@400;600;700&display=swap">
+<style>
+/* Layout: one narrow column, a ledger of trading days, newest on top; a sheet slides up for a new plan */
+:root{
+  --bg:#f6f7f5; --surface:#ffffff; --ink:#1c2430; --muted:#5f6b78; --line:#dde2e0;
+  --accent:#1f5f4a; --accent-ink:#ffffff; --accent-soft:#e3efe9; --warn:#a33b2b; --warn-soft:#f6e4e0;
+  --shadow:0 1px 2px rgba(20,30,40,.06),0 4px 14px rgba(20,30,40,.05);
+  --display:"Frank Ruhl Libre","David","Times New Roman",serif;
+  --body:"Assistant","Arial Hebrew","Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12171c; --surface:#1a2128; --ink:#e7ecef; --muted:#9aa7b2; --line:#2c3640;
+  --accent:#5fb393; --accent-ink:#0d1a15; --accent-soft:#1e3229; --warn:#e48a7a; --warn-soft:#3a2420;
+  --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171c; --surface:#1a2128; --ink:#e7ecef; --muted:#9aa7b2; --line:#2c3640;
+  --accent:#5fb393; --accent-ink:#0d1a15; --accent-soft:#1e3229; --warn:#e48a7a; --warn-soft:#3a2420;
+  --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}
+
+[hidden]{display:none!important}
+html{direction:rtl}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;direction:rtl}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:20px 96px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+h1{font-family:var(--display);font-weight:700;font-size:1.9rem;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:.95rem;margin:2px 0 0}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:.55rem 1rem}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,label.chk:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.danger{color:var(--warn);border-color:var(--warn)}
+.danger.solid{background:var(--warn);color:var(--surface)}
+.status{font-size:.9rem;color:var(--muted);margin:0 0 14px}
+.status.err{color:var(--warn)}
+
+.day{margin-top:22px}
+.day h2{font-family:var(--display);font-weight:500;font-size:1.15rem;color:var(--muted);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:baseline}
+.day h2 .dow{font-family:var(--body);font-size:.9rem}
+.cards{display:grid;gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px;display:grid;gap:10px;min-width:0}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sym{font-family:var(--body);font-weight:700;font-size:1.35rem;letter-spacing:.04em;direction:ltr;unicode-bidi:isolate}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{font-size:.82rem;padding:.15rem .6rem;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600;white-space:nowrap}
+.pill.plain{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:400}
+dl.fields{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}
+dl.fields dt{color:var(--muted);font-size:.9rem;white-space:nowrap}
+dl.fields dd{margin:0;min-width:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.scen{margin:0;padding-inline-start:18px}
+.scen li{margin:0}
+.note{color:var(--muted);font-size:.92rem;white-space:pre-wrap;border-top:1px dashed var(--line);padding-top:8px}
+.card-actions{display:flex;gap:8px;justify-content:flex-start}
+.card-actions button{padding:.35rem .8rem;font-size:.9rem}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--warn-soft);border-radius:8px;padding:8px 10px;font-size:.92rem}
+
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:28px 20px;text-align:center;color:var(--muted)}
+.empty strong{display:block;color:var(--ink);font-family:var(--display);font-size:1.2rem;margin-bottom:6px}
+
+details.ref{margin-top:28px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 16px}
+details.ref summary{cursor:pointer;font-weight:600}
+details.ref ol{margin:10px 0 4px}
+
+/* sheet */
+.overlay{position:fixed;inset:0;background:rgba(10,15,20,.45);display:flex;align-items:flex-end;justify-content:center;z-index:10}
+.sheet{background:var(--surface);color:var(--ink);width:100%;max-width:720px;max-height:92%;overflow:auto;border-radius:16px 16px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+@media (min-width:760px){.overlay{align-items:center}.sheet{border-radius:16px;max-height:88%}}
+.sheet h3{font-family:var(--display);font-size:1.4rem;margin:0 0 14px}
+form{display:grid;gap:14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:440px){.row2{grid-template-columns:1fr}}
+.f{display:grid;gap:5px;min-width:0}
+.f > span,.legend{font-weight:600;font-size:.95rem}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:.55rem .7rem;width:100%;box-sizing:border-box}
+textarea{min-height:70px;resize:vertical}
+input.ltr{direction:ltr;text-align:right}
+fieldset{border:0;margin:0;padding:0;display:grid;gap:6px}
+label.chk{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:9px;cursor:pointer;background:var(--bg)}
+label.chk input{width:auto;margin-top:4px;accent-color:var(--accent)}
+.seg{display:flex;gap:8px}
+.seg label{flex:1;display:flex;gap:8px;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:9px;padding:.5rem;cursor:pointer;background:var(--bg)}
+.seg input{width:auto;accent-color:var(--accent)}
+.hint{font-size:.88rem;color:var(--accent);font-weight:600}
+.method{font-weight:400;color:var(--muted);font-size:.9rem}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);font-weight:600;font-size:.92rem;justify-self:start;text-decoration:underline;text-underline-offset:3px}
+.form-actions{display:flex;gap:10px;justify-content:flex-start;flex-wrap:wrap;padding-top:4px}
+.ferr{color:var(--warn);font-size:.9rem}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(16px);opacity:.6}to{transform:none;opacity:1}}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>תוכניות עבודה</h1>
+      <p class="sub">MST · תוכנית לכל עסקה, ליום מסחר אחד · נשמרת 10 ימים</p>
+    </div>
+    <button class="primary" id="newBtn" type="button">תוכנית חדשה</button>
+  </header>
+  <p class="status" id="status">טוען את התוכניות…</p>
+  <main id="list"></main>
+
+  <details class="ref">
+    <summary>חמשת התרחישים</summary>
+    <ol id="refList"></ol>
+  </details>
+  <p class="status" id="assetsInfo" style="margin-top:14px"></p>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <h3 id="sheetTitle">תוכנית חדשה</h3>
+    <form id="form" novalidate>
+      <div class="row2">
+        <label class="f"><span>יום מסחר</span><input type="date" id="f-date" required></label>
+        <label class="f"><span>מניה / נכס</span><input type="text" id="f-symbol" class="ltr" autocomplete="off" autocapitalize="characters" placeholder="NUAI" required></label>
+      </div>
+      <div class="row2">
+        <label class="f"><span>תאריך החדשה (לא חובה)</span><input type="date" id="f-news"></label>
+      </div>
+      <div class="row2" id="underRow" hidden>
+        <label class="f"><span>נכס בסיס (לתעודת סל)</span><input type="text" id="f-under" class="ltr" autocomplete="off" autocapitalize="characters" placeholder="QQQ"></label>
+      </div>
+      <fieldset>
+        <span class="legend">תרחיש</span>
+        <div id="f-scen"></div>
+      </fieldset>
+      <fieldset>
+        <span class="legend">סיווג</span>
+        <div class="seg">
+          <label><input type="radio" name="cls" value="1" id="f-cls1" checked> 1 · יום ההיפוך</label>
+          <label><input type="radio" name="cls" value="2" id="f-cls2"> 2 · יום אחרי</label>
+        </div>
+        <span class="hint" id="clsHint"></span>
+      </fieldset>
+      <div class="row2">
+        <label class="f"><span>סטופ <span class="method" id="stopMethod"></span></span><input type="text" id="f-stop" class="ltr" inputmode="decimal" placeholder="0.70"></label>
+        <label class="f"><span id="targetLabel">יעד מימוש 1</span><input type="text" id="f-target" class="ltr" inputmode="decimal" placeholder="54"></label>
+      </div>
+      <label class="f"><span>הערות</span><textarea id="f-notes"></textarea></label>
+      <p class="ferr" id="ferr" hidden></p>
+      <div class="form-actions">
+        <button class="primary" type="submit" id="saveBtn">שמירה</button>
+        <button type="button" id="cancelBtn">ביטול</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const SCENARIOS = [
+  "מעבר של גבוה יום קודם, כניסה",
+  "מעבר של VWAP, כניסה",
+  "שבירה של נמוך יום קודם ומעבר של VWAP, כניסה",
+  "שבירה של נמוך שבוע קודם ומעבר של VWAP, כניסה",
+  "ירידה מתחת ל-VWAP ולאחר מכן מעבר של VWAP, כניסה"
+];
+const DOW = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+const KEEP_DAYS = 10; // plans older than this (by trading date) are deleted
+// Large assets (> $400B, indices, commodities, bitcoin). Anything not listed defaults to small.
+// Stocks above $400B: refreshed daily into the db (config/assets); this list is the fallback until it loads.
+let STOCKS = "NVDA AAPL GOOG GOOGL MSFT AMZN TSM META AVGO TSLA MU BRK.B BRK.A AMD LLY JPM WMT ASML V XOM JNJ INTC MA TCEHY ABBV CSCO PLTR ORCL AMAT LRCX COST CVX".split(" ");
+let stocksUpdated = "";
+const FIXED_LARGE = new Set(("SPY VOO IVV QQQ " +
+  "NDX NQ NQ1! MNQ MNQ1! US100 NAS100 SPX ES ES1! MES MES1! US500 SPX500 DJI YM YM1! US30 RUT RTY RTY1! M2K SOX " +
+  "GC GC1! MGC XAUUSD GOLD SI SI1! XAGUSD SILVER CL CL1! MCL USOIL WTI BRENT UKOIL NG NG1! HG HG1! COPPER " +
+  "BTC BTCUSD BTCUSDT XBTUSD ETH ETHUSD ETHUSDT").split(" "));
+const isLarge = s => FIXED_LARGE.has(s) || STOCKS.includes(s);
+// ETF -> underlying asset. Classification follows the underlying; the stop follows the ETF itself.
+const ETF = {
+  TQQQ:"QQQ", SQQQ:"QQQ", QLD:"QQQ", QID:"QQQ", PSQ:"QQQ",
+  SPXL:"SPY", SPXS:"SPY", UPRO:"SPY", SPXU:"SPY", SSO:"SPY", SDS:"SPY", SH:"SPY",
+  IWM:"RUT", TNA:"RUT", TZA:"RUT", URTY:"RUT", SRTY:"RUT", UWM:"RUT", TWM:"RUT",
+  DIA:"DJI", UDOW:"DJI", SDOW:"DJI", DDM:"DJI", DXD:"DJI",
+  SOXL:"SOX", SOXS:"SOX", USD:"SOX", SSG:"SOX",
+  GLD:"GOLD", IAU:"GOLD", UGL:"GOLD", GLL:"GOLD", SLV:"SILVER", AGQ:"SILVER", ZSL:"SILVER",
+  USO:"CL", UCO:"CL", SCO:"CL", BNO:"BRENT", UNG:"NG", BOIL:"NG", KOLD:"NG",
+  IBIT:"BTC", FBTC:"BTC", GBTC:"BTC", BITO:"BTC", BITX:"BTC", BITU:"BTC", SBIT:"BTC",
+  ETHA:"ETH", FETH:"ETH", ETHE:"ETH", ETHU:"ETH", ETHT:"ETH", ETHD:"ETH",
+  NVDL:"NVDA", NVDU:"NVDA", NVDD:"NVDA", NVDQ:"NVDA", TSLL:"TSLA", TSLQ:"TSLA", TSLZ:"TSLA",
+  AAPU:"AAPL", AAPD:"AAPL", MSFU:"MSFT", AMZU:"AMZN", GGLL:"GOOGL", METU:"META", AVL:"AVGO", PLTU:"PLTR"
+};
+const capOf = s => isLarge(s) ? "large" : "small";
+const $ = id => document.getElementById(id);
+let db = null, store = null, plans = [], editingId = null, confirmId = null, canWrite = false;
+
+$("refList").innerHTML = SCENARIOS.map(s => `<li>${s}</li>`).join("");
+$("f-scen").innerHTML = SCENARIOS.map((s,i) =>
+  `<label class="chk"><input type="checkbox" id="f-scen-${i+1}" value="${i+1}"><span>${i+1}. ${s}</span></label>`).join("");
+
+function esc(s){return String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function fmtDate(iso){ if(!iso) return ""; const [y,m,d]=iso.split("-"); return `${d}.${m}.${y}`; }
+function today(){ const t=new Date(); return new Date(t.getTime()-t.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+function daysBetween(a,b){ return Math.round((new Date(b+"T00:00:00")-new Date(a+"T00:00:00"))/86400000); }
+function suggestCls(cap, news, date){
+  if(!news || !date) return null;
+  if(cap==="large") return {cls:1, why:"נכס גדול"};
+  const age = daysBetween(news, date);
+  return age <= 14 ? {cls:1, why:`חדשה בת ${age} ימים`} : {cls:2, why:`חדשה בת ${age} ימים`};
+}
+function setStatus(t, err){ const s=$("status"); s.textContent=t; s.classList.toggle("err",!!err); s.hidden=!t; }
+
+function render(){
+  const list = $("list");
+  if(!plans.length){
+    list.innerHTML = `<div class="empty"><strong>עוד אין תוכניות</strong>לחצו "תוכנית חדשה" כדי לרשום את הראשונה.</div>`;
+    return;
+  }
+  const sorted = [...plans].sort((a,b)=> (b.date||"").localeCompare(a.date||"") || (b.createdAt||0)-(a.createdAt||0));
+  const groups = [];
+  for(const p of sorted){ const g = groups[groups.length-1]; if(g && g.date===p.date) g.items.push(p); else groups.push({date:p.date,items:[p]}); }
+  list.innerHTML = groups.map(g=>{
+    const dow = g.date ? "יום " + DOW[new Date(g.date+"T00:00:00").getDay()] : "";
+    return `<section class="day"><h2>${esc(fmtDate(g.date))}<span class="dow">${esc(dow)}</span></h2><div class="cards">${g.items.map(card).join("")}</div></section>`;
+  }).join("");
+}
+function card(p){
+  const scen = (p.scenarios||[]).map(n=>`<li>${esc(SCENARIOS[n-1]||"")}</li>`).join("");
+  const cap = p.cap==="large" ? "מעל 400B" : "מתחת ל-400B";
+  const actions = !canWrite ? "" : (confirmId===p.id
+    ? `<div class="confirm">למחוק את התוכנית של ${esc(p.symbol)}? <button class="danger solid" type="button" data-act="del-yes" data-id="${p.id}">מחיקה</button><button type="button" data-act="del-no">ביטול</button></div>`
+    : `<div class="card-actions"><button type="button" data-act="edit" data-id="${p.id}">עריכה</button><button class="danger" type="button" data-act="del" data-id="${p.id}">מחיקה</button></div>`);
+  return `<article class="card">
+    <div class="card-head"><span class="sym">${esc(p.symbol)}</span>
+      <div class="pills"><span class="pill">סיווג ${esc(p.cls)}</span><span class="pill plain">${cap}</span>${p.underlying ? `<span class="pill plain">בסיס: <bdi>${esc(p.underlying)}</bdi></span>` : ""}</div></div>
+    <dl class="fields">
+      <dt>תרחיש</dt><dd>${scen ? `<ol class="scen">${scen}</ol>` : "לא נקבע"}</dd>
+      <dt>סטופ</dt><dd>${esc(p.stop)||"לא נקבע"}</dd>
+      <dt>יעד מימוש 1${p.underlying ? ` (לפי <bdi>${esc(p.underlying)}</bdi>)` : ""}</dt><dd>${esc(p.target1)||"לא נקבע"}</dd>
+      ${p.newsDate ? `<dt>חדשה</dt><dd>${esc(fmtDate(p.newsDate))}</dd>` : ""}
+    </dl>
+    ${p.notes ? `<div class="note">${esc(p.notes)}</div>` : ""}
+    ${actions}
+  </article>`;
+}
+
+function symCap(){ return capOf($("f-symbol").value.trim().toUpperCase()); }
+// Stop method: an ETF on an index, commodity or crypto -> fib; an ETF on a single stock -> consolidation; otherwise by the asset's own cap.
+function stopIsFib(){ const u=$("f-under").value.trim().toUpperCase(); return u ? FIXED_LARGE.has(u) : symCap()==="large"; }
+function effectiveCap(){ const u=$("f-under").value.trim().toUpperCase(); return u ? capOf(u) : symCap(); }
+function showUnder(on){ $("underRow").hidden = !on; if(!on){ $("f-under").value=""; } }
+function updateHint(auto){
+  const hasUnder = !!$("f-under").value.trim();
+  { const u=$("f-under").value.trim().toUpperCase(); $("targetLabel").textContent = u ? `יעד מימוש 1 (לפי ${u})` : "יעד מימוש 1"; }
+  const s = suggestCls(effectiveCap(), $("f-news").value, $("f-date").value);
+  if($("f-scen-1").checked){ if(auto === true) $("f-cls2").checked = true; $("clsHint").textContent = "לפי התרחיש: 2 (מעבר של גבוה יום קודם)"; $("stopMethod").textContent = stopIsFib() ? "(פיבונאצ'י 0.618)" : "(דשדוש 30 דק')"; return; }
+  if(s && auto === true) $(s.cls===2 ? "f-cls2" : "f-cls1").checked = true;
+  $("clsHint").textContent = s ? `לפי הכלל: ${s.cls} (${hasUnder ? "נכס בסיס " + $("f-under").value.trim().toUpperCase() + ", " : ""}${s.why})` : "";
+  $("stopMethod").textContent = stopIsFib() ? "(פיבונאצ'י 0.618)" : "(דשדוש 30 דק')";
+}
+let lastAuto = "", autoTimer = null;
+function autofill(){
+  const sym = $("f-symbol").value.trim().toUpperCase();
+  if(sym === lastAuto) return;
+  lastAuto = sym;
+  if(!sym){ updateHint(true); return; }
+  const base = ETF[sym];
+  showUnder(!!base);
+  $("f-under").value = base || "";
+  updateHint(true);
+}
+function openForm(p){
+  editingId = p ? p.id : null;
+  $("sheetTitle").textContent = p ? `עריכה · ${p.symbol}` : "תוכנית חדשה";
+  $("f-date").value = p?.date || today();
+  $("f-symbol").value = p?.symbol || "";
+  lastAuto = p?.symbol || "";
+  $("f-news").value = p?.newsDate || "";
+  showUnder(!!p?.underlying);
+  $("f-under").value = p?.underlying || "";
+  SCENARIOS.forEach((_,i)=> $(`f-scen-${i+1}`).checked = !!(p?.scenarios||[]).includes(i+1));
+  (String(p?.cls||"1")==="2" ? $("f-cls2") : $("f-cls1")).checked = true;
+  $("f-stop").value = p?.stop || "";
+  $("f-target").value = p?.target1 || "";
+  $("f-notes").value = p?.notes || "";
+  $("ferr").hidden = true;
+  updateHint();
+  $("overlay").hidden = false;
+  setTimeout(()=> $("f-symbol").focus(), 30);
+}
+function closeForm(){ $("overlay").hidden = true; editingId = null; }
+
+["f-news","f-date"].forEach(id=> $(id).addEventListener("input", ()=> updateHint(true)));
+$("f-scen-1").addEventListener("change", ()=>{
+  if($("f-scen-1").checked){ $("f-cls2").checked = true; $("clsHint").textContent = "לפי התרחיש: 2 (מעבר של גבוה יום קודם)"; }
+  else updateHint(true);
+});
+$("f-under").addEventListener("input", ()=> updateHint(true));
+$("f-symbol").addEventListener("change", autofill);
+$("f-symbol").addEventListener("blur", autofill);
+$("f-symbol").addEventListener("input", ()=>{ clearTimeout(autoTimer); autoTimer = setTimeout(autofill, 350); });
+function cleanTicker(el){
+  const pos = el.selectionStart;
+  const before = el.value;
+  const v = before.replace(/[^A-Za-z0-9.!\-]/g, "").toUpperCase();
+  if(v !== before){ el.value = v; const d = before.length - v.length; try{ el.setSelectionRange(Math.max(0,pos-d), Math.max(0,pos-d)); }catch{} }
+}
+["f-symbol","f-under"].forEach(id=> $(id).addEventListener("input", ()=> cleanTicker($(id))));
+["f-date","f-news"].forEach(id=> $(id).addEventListener("change", ()=> $(id).blur()));
+$("newBtn").addEventListener("click", ()=> openForm(null));
+$("cancelBtn").addEventListener("click", closeForm);
+$("overlay").addEventListener("click", e=>{ if(e.target.id==="overlay") closeForm(); });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !$("overlay").hidden) closeForm(); });
+
+$("form").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const err = $("ferr");
+  const data = {
+    date: $("f-date").value,
+    symbol: $("f-symbol").value.trim().toUpperCase(),
+    cap: symCap(),
+    newsDate: $("f-news").value || "",
+    underlying: $("f-under").value.trim().toUpperCase(),
+    baseCap: $("f-under").value.trim() ? capOf($("f-under").value.trim().toUpperCase()) : "",
+    scenarios: SCENARIOS.map((_,i)=>i+1).filter(n=> $(`f-scen-${n}`).checked),
+    cls: Number(document.querySelector('input[name="cls"]:checked').value),
+    stop: $("f-stop").value.trim(),
+    target1: $("f-target").value.trim(),
+    notes: $("f-notes").value.trim()
+  };
+  if(!data.date || !data.symbol){ err.textContent="חסרים יום מסחר ושם מניה."; err.hidden=false; return; }
+  if(!store){ err.textContent="אין חיבור לשמירה כרגע. נסו לרענן את העמוד."; err.hidden=false; return; }
+  $("saveBtn").disabled = true;
+  try{
+    const old = editingId ? plans.find(p=>p.id===editingId) : null;
+    await store.save(editingId, {...data, createdAt: old?.createdAt || Date.now()});
+    closeForm();
+  }catch(ex){
+    err.textContent = ex?.code==="quota_exceeded" ? "היומן מלא. מחקו תוכניות ישנות ונסו שוב." : "השמירה נכשלה. נסו שוב.";
+    err.hidden = false;
+  }finally{ $("saveBtn").disabled = false; }
+});
+
+$("list").addEventListener("click", async e=>{
+  const b = e.target.closest("button[data-act]"); if(!b) return;
+  const id = b.dataset.id, act = b.dataset.act;
+  if(act==="edit"){ openForm(plans.find(p=>p.id===id)); }
+  else if(act==="del"){ confirmId = id; render(); }
+  else if(act==="del-no"){ confirmId = null; render(); }
+  else if(act==="del-yes"){
+    try{ await store.remove(id); confirmId=null; render(); }
+    catch{ setStatus("המחיקה נכשלה. נסו שוב.", true); }
+  }
+});
+
+render();
+setStatus("טוען את התוכניות…");
+function showStocksInfo(){
+  $("assetsInfo").textContent = stocksUpdated
+    ? `רשימת המניות מעל 400 מיליארד $ עודכנה ב-${fmtDate(String(stocksUpdated).slice(0,10))} (${STOCKS.length} מניות).` : "";
+}
+// Standalone mode (outside Claude): plans live in this browser only.
+const LS_KEY = "mst-work-plans-v1";
+function lsRead(){ try{ const v = JSON.parse(localStorage.getItem(LS_KEY) || "[]"); return Array.isArray(v) ? v : []; }catch{ return null; } }
+function lsWrite(arr){ try{ localStorage.setItem(LS_KEY, JSON.stringify(arr)); return true; }catch{ return false; } }
+function newId(){ try{ return crypto.randomUUID(); }catch{ return Date.now().toString(36) + Math.random().toString(36).slice(2); } }
+function startLocal(){
+  const all = lsRead();
+  if(all === null){ setStatus("הדפדפן הזה חוסם שמירה. פתחו את הקישור בדפדפן רגיל (לא בחלון פרטי).", true); $("newBtn").hidden = true; return; }
+  const t = today();
+  const keep = all.filter(p=> !(p.date && daysBetween(p.date, t) > KEEP_DAYS));
+  if(keep.length !== all.length) lsWrite(keep);
+  plans = keep; canWrite = true; $("newBtn").hidden = false;
+  store = {
+    async save(id, data){
+      const arr = lsRead() || [];
+      if(id){ const i = arr.findIndex(p=>p.id===id); if(i>=0) arr[i] = {...data, id}; else arr.push({...data, id}); }
+      else arr.push({...data, id:newId()});
+      if(!lsWrite(arr)) throw new Error("storage");
+      plans = arr; render();
+    },
+    async remove(id){
+      const arr = (lsRead() || []).filter(p=>p.id!==id);
+      if(!lsWrite(arr)) throw new Error("storage");
+      plans = arr;
+    }
+  };
+  setStatus(""); render();
+  fetch("assets.json", {cache:"no-store"}).then(r=> r.ok ? r.json() : null).then(d=>{
+    if(d && Array.isArray(d.stocks) && d.stocks.length){ STOCKS = d.stocks.map(s=>String(s).toUpperCase()); stocksUpdated = d.updatedAt || ""; showStocksInfo(); }
+  }).catch(()=>{});
+}
+(async()=>{
+  if(!window.claude?.use){ startLocal(); return; }
+  db = await window.claude.use("db");
+  if(!db){ setStatus("אין גישה ליומן מהתצוגה הזו.", true); $("newBtn").hidden = true; return; }
+  const user = await window.claude.use("user");
+  const w = user ? await user.can("data.write") : null;
+  canWrite = w !== false;
+  $("newBtn").hidden = !canWrite;
+  store = {
+    async save(id, data){ if(id) await db.doc("plans/"+id).set(data); else await db.collection("plans").add(data); },
+    async remove(id){ await db.doc("plans/"+id).delete(); }
+  };
+  db.doc("config/assets").onSnapshot(snap=>{
+    const d = snap.exists ? snap.data() : null;
+    if(d && Array.isArray(d.stocks) && d.stocks.length){
+      STOCKS = d.stocks.map(s=>String(s).toUpperCase());
+      stocksUpdated = d.updatedAt || "";
+      showStocksInfo();
+    }
+  }, ()=>{});
+  const purging = new Set();
+  db.collection("plans").onSnapshot(async snap=>{
+    const all = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    const t = today();
+    const expired = all.filter(p=> p.date && daysBetween(p.date, t) > KEEP_DAYS);
+    plans = all.filter(p=> !expired.includes(p));
+    setStatus("");
+    render();
+    if(!canWrite) return;
+    for(const p of expired){
+      if(purging.has(p.id)) continue;
+      purging.add(p.id);
+      try{ await db.doc("plans/"+p.id).delete(); }catch{ purging.delete(p.id); }
+    }
+  }, ()=> setStatus("החיבור ליומן נותק. רעננו את העמוד.", true));
+})();
+</script>
+
+</body>
+</html>
