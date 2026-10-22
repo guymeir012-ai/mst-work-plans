@@ -259,10 +259,10 @@ function updateHint(auto){
   const hasUnder = !!$("f-under").value.trim();
   { const u=$("f-under").value.trim().toUpperCase(); $("targetLabel").textContent = u ? `יעד מימוש 1 (לפי ${u})` : "יעד מימוש 1"; }
   const s = suggestCls(effectiveCap(), $("f-news").value, $("f-date").value);
-  if($("f-scen-1").checked){ if(auto === true) $("f-cls2").checked = true; $("clsHint").textContent = "לפי התרחיש: 2 (מעבר של גבוה יום קודם)"; $("stopMethod").textContent = stopIsFib() ? "(פיבונאצ'י 0.618)" : "(דשדוש 30 דק')"; return; }
+  if($("f-scen-1").checked){ if(auto === true) $("f-cls2").checked = true; $("clsHint").textContent = "לפי התרחיש: 2 (מעבר של גבוה יום קודם)"; $("stopMethod").textContent = stopIsFib() ? "(פיבונאצ'י 0.618)" : "(דשדוש בנרות 30 דק׳, מינימום שעה וחצי)"; return; }
   if(s && auto === true) $(s.cls===2 ? "f-cls2" : "f-cls1").checked = true;
   $("clsHint").textContent = s ? `לפי הכלל: ${s.cls} (${hasUnder ? "נכס בסיס " + $("f-under").value.trim().toUpperCase() + ", " : ""}${s.why})` : "";
-  $("stopMethod").textContent = stopIsFib() ? "(פיבונאצ'י 0.618)" : "(דשדוש 30 דק')";
+  $("stopMethod").textContent = stopIsFib() ? "(פיבונאצ'י 0.618)" : "(דשדוש בנרות 30 דק׳, מינימום שעה וחצי)";
 }
 let lastAuto = "", autoTimer = null;
 function autofill(){
