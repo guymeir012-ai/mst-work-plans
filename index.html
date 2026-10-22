@@ -156,7 +156,7 @@ label.chk input{width:auto;margin-top:4px;accent-color:var(--accent)}
         <label class="f"><span>סטופ <span class="method" id="stopMethod"></span></span><input type="text" id="f-stop" class="ltr" inputmode="decimal" placeholder="0.70"></label>
         <label class="f"><span id="targetLabel">יעד מימוש 1</span><input type="text" id="f-target" class="ltr" inputmode="decimal" placeholder="54"></label>
       </div>
-      <div class="row2">
+      <div class="row2" id="entryRow">
         <label class="f"><span>מחיר כניסה משוער (אופציונלי)</span><input type="text" id="f-entry" class="ltr" inputmode="decimal" placeholder="43.17"></label>
       </div>
       <p class="rr" id="rr" hidden></p>
@@ -312,11 +312,14 @@ $("f-scen-1").addEventListener("change", ()=>{
   else updateHint(true);
 });
 $("f-under").addEventListener("input", ()=> updateHint(true));
-// Worth it = at least 1:5 from the estimated entry to target 1 (stop is a distance). ETFs: target is on the underlying, so no result.
+// Worth it = at least 1:5 from the estimated entry to target 1 (stop is a distance). ETFs with an underlying: target is on the underlying, so the field is hidden.
 function num(id){ const v = parseFloat($(id).value.replace(",", ".")); return isFinite(v) ? v : NaN; }
 function updateRR(){
-  const el = $("rr"), entry = num("f-entry"), stop = num("f-stop"), target = num("f-target");
-  if($("f-under").value.trim() || !(entry > 0) || !(stop > 0) || !(target > 0) || target === entry){ el.hidden = true; return; }
+  const el = $("rr"), hasUnder = !!$("f-under").value.trim();
+  $("entryRow").hidden = hasUnder;
+  if(hasUnder) $("f-entry").value = "";
+  const entry = num("f-entry"), stop = num("f-stop"), target = num("f-target");
+  if(hasUnder || !(entry > 0) || !(stop > 0) || !(target > 0) || target === entry){ el.hidden = true; return; }
   const ok = Math.abs(target - entry) / stop >= 5;
   el.textContent = ok ? "עסקה כדאית" : "עסקה לא כדאית";
   el.className = "rr " + (ok ? "ok" : "bad");
