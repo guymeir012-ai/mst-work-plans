@@ -102,6 +102,9 @@ label.chk input{width:auto;margin-top:4px;accent-color:var(--accent)}
 .linkbtn{background:none;border:0;padding:0;color:var(--accent);font-weight:600;font-size:.92rem;justify-self:start;text-decoration:underline;text-underline-offset:3px}
 .form-actions{display:flex;gap:10px;justify-content:flex-start;flex-wrap:wrap;padding-top:4px}
 .ferr{color:var(--warn);font-size:.9rem}
+.rr{margin:0;font-weight:700;font-size:.95rem}
+.rr.ok{color:var(--accent)}
+.rr.bad{color:var(--warn)}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(16px);opacity:.6}to{transform:none;opacity:1}}}
 </style>
 
@@ -153,6 +156,10 @@ label.chk input{width:auto;margin-top:4px;accent-color:var(--accent)}
         <label class="f"><span>סטופ <span class="method" id="stopMethod"></span></span><input type="text" id="f-stop" class="ltr" inputmode="decimal" placeholder="0.70"></label>
         <label class="f"><span id="targetLabel">יעד מימוש 1</span><input type="text" id="f-target" class="ltr" inputmode="decimal" placeholder="54"></label>
       </div>
+      <div class="row2">
+        <label class="f"><span>מחיר כניסה משוער (אופציונלי)</span><input type="text" id="f-entry" class="ltr" inputmode="decimal" placeholder="43.17"></label>
+      </div>
+      <p class="rr" id="rr" hidden></p>
       <label class="f"><span>הערות</span><textarea id="f-notes"></textarea></label>
       <p class="ferr" id="ferr" hidden></p>
       <div class="form-actions">
@@ -259,10 +266,11 @@ function updateHint(auto){
   const hasUnder = !!$("f-under").value.trim();
   { const u=$("f-under").value.trim().toUpperCase(); $("targetLabel").textContent = u ? `יעד מימוש 1 (לפי ${u})` : "יעד מימוש 1"; }
   const s = suggestCls(effectiveCap(), $("f-news").value, $("f-date").value);
-  if($("f-scen-1").checked){ if(auto === true) $("f-cls2").checked = true; $("clsHint").textContent = "לפי התרחיש: 2 (מעבר של גבוה יום קודם)"; $("stopMethod").textContent = stopIsFib() ? "(פיבונאצ'י 0.618)" : "(דשדוש בנרות 30 דק׳, מינימום שעה וחצי)"; return; }
+  if($("f-scen-1").checked){ if(auto === true) $("f-cls2").checked = true; $("clsHint").textContent = "לפי התרחיש: 2 (מעבר של גבוה יום קודם)"; $("stopMethod").textContent = stopIsFib() ? "(פיבונאצ'י 0.618)" : "(דשדוש בנרות 30 דק׳, מינימום שעה וחצי)"; updateRR(); return; }
   if(s && auto === true) $(s.cls===2 ? "f-cls2" : "f-cls1").checked = true;
   $("clsHint").textContent = s ? `לפי הכלל: ${s.cls} (${hasUnder ? "נכס בסיס " + $("f-under").value.trim().toUpperCase() + ", " : ""}${s.why})` : "";
   $("stopMethod").textContent = stopIsFib() ? "(פיבונאצ'י 0.618)" : "(דשדוש בנרות 30 דק׳, מינימום שעה וחצי)";
+  updateRR();
 }
 let lastAuto = "", autoTimer = null;
 function autofill(){
@@ -288,8 +296,10 @@ function openForm(p){
   (String(p?.cls||"1")==="2" ? $("f-cls2") : $("f-cls1")).checked = true;
   $("f-stop").value = p?.stop || "";
   $("f-target").value = p?.target1 || "";
+  $("f-entry").value = p?.entry || "";
   $("f-notes").value = p?.notes || "";
   $("ferr").hidden = true;
+  updateRR();
   updateHint();
   $("overlay").hidden = false;
   setTimeout(()=> $("f-symbol").focus(), 30);
@@ -302,6 +312,17 @@ $("f-scen-1").addEventListener("change", ()=>{
   else updateHint(true);
 });
 $("f-under").addEventListener("input", ()=> updateHint(true));
+// Worth it = at least 1:5 from the estimated entry to target 1 (stop is a distance). ETFs: target is on the underlying, so no result.
+function num(id){ const v = parseFloat($(id).value.replace(",", ".")); return isFinite(v) ? v : NaN; }
+function updateRR(){
+  const el = $("rr"), entry = num("f-entry"), stop = num("f-stop"), target = num("f-target");
+  if($("f-under").value.trim() || !(entry > 0) || !(stop > 0) || !(target > 0) || target === entry){ el.hidden = true; return; }
+  const ok = Math.abs(target - entry) / stop >= 5;
+  el.textContent = ok ? "עסקה כדאית" : "עסקה לא כדאית";
+  el.className = "rr " + (ok ? "ok" : "bad");
+  el.hidden = false;
+}
+["f-entry","f-stop","f-target","f-under","f-symbol"].forEach(id=> $(id).addEventListener("input", updateRR));
 $("f-symbol").addEventListener("change", autofill);
 $("f-symbol").addEventListener("blur", autofill);
 $("f-symbol").addEventListener("input", ()=>{ clearTimeout(autoTimer); autoTimer = setTimeout(autofill, 350); });
@@ -332,6 +353,7 @@ $("form").addEventListener("submit", async e=>{
     cls: Number(document.querySelector('input[name="cls"]:checked').value),
     stop: $("f-stop").value.trim(),
     target1: $("f-target").value.trim(),
+    entry: $("f-entry").value.trim(),
     notes: $("f-notes").value.trim()
   };
   if(!data.date || !data.symbol){ err.textContent="חסרים יום מסחר ושם מניה."; err.hidden=false; return; }
