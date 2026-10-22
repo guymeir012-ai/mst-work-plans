@@ -54,6 +54,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .day{margin-top:22px}
 .day h2{font-family:var(--display);font-weight:500;font-size:1.15rem;color:var(--muted);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:baseline}
 .day h2 .dow{font-family:var(--body);font-size:.9rem}
+.macro{margin:-4px 0 10px;color:var(--warn);font-weight:600;font-size:.92rem}
 .cards{display:grid;gap:12px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px;display:grid;gap:10px;min-width:0}
 .card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
@@ -178,6 +179,26 @@ const SCENARIOS = [
   "שבירה של נמוך שבוע קודם ומעבר של VWAP, כניסה",
   "ירידה מתחת ל-VWAP ולאחר מכן מעבר של VWAP, כניסה"
 ];
+// US macro releases that move the market (lesson 10). Times are New York time; shown in Israel time.
+// Sources: federalreserve.gov FOMC calendar, bls.gov CPI and Employment Situation schedules (through Dec 2027).
+const MACRO_SRC = [
+  ["החלטת ריבית", 14, 0, "2026-01-28 2026-03-18 2026-04-29 2026-06-17 2026-07-29 2026-09-16 2026-10-28 2026-12-09 2027-01-27 2027-03-17 2027-04-28 2027-06-09 2027-07-28 2027-09-15 2027-10-27 2027-12-08"],
+  ["מדד המחירים לצרכן", 8, 30, "2026-11-10 2026-12-10 2027-01-13 2027-02-11 2027-03-10 2027-04-13 2027-05-12 2027-06-10 2027-07-14 2027-08-11 2027-09-14 2027-10-14 2027-11-10 2027-12-10"],
+  ["שיעור האבטלה", 8, 30, "2026-11-06 2026-12-04 2027-01-08 2027-02-05 2027-03-05 2027-04-02 2027-05-07 2027-06-04 2027-07-02 2027-08-06 2027-09-03 2027-10-08 2027-11-05 2027-12-03"]
+];
+const MACRO = {};
+MACRO_SRC.forEach(([name,h,m,dates])=> dates.split(" ").forEach(d=> (MACRO[d] = MACRO[d] || []).push([name,h,m])));
+function tzOffset(tz, ts){ const d = new Date(ts); return Date.parse(d.toLocaleString("en-US",{timeZone:tz})) - Date.parse(d.toLocaleString("en-US",{timeZone:"UTC"})); }
+function nyToIsrael(iso, h, m){
+  const [y,mo,d] = iso.split("-").map(Number);
+  const guess = Date.UTC(y, mo-1, d, h, m);
+  const ts = guess - tzOffset("America/New_York", guess);
+  return new Date(ts).toLocaleTimeString("he-IL",{timeZone:"Asia/Jerusalem", hour:"2-digit", minute:"2-digit", hourCycle:"h23"});
+}
+function macroLine(iso){
+  const ev = MACRO[iso]; if(!ev) return "";
+  return `<p class="macro">היום ${ev.map(([n,h,m])=> `${n}, ${nyToIsrael(iso,h,m)}`).join(" · ")}</p>`;
+}
 const DOW = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
 const KEEP_DAYS = 10; // plans older than this (by trading date) are deleted
 // Large assets (> $400B, indices, commodities, bitcoin). Anything not listed defaults to small.
@@ -234,7 +255,7 @@ function render(){
   for(const p of sorted){ const g = groups[groups.length-1]; if(g && g.date===p.date) g.items.push(p); else groups.push({date:p.date,items:[p]}); }
   list.innerHTML = groups.map(g=>{
     const dow = g.date ? "יום " + DOW[new Date(g.date+"T00:00:00").getDay()] : "";
-    return `<section class="day"><h2>${esc(fmtDate(g.date))}<span class="dow">${esc(dow)}</span></h2><div class="cards">${g.items.map(card).join("")}</div></section>`;
+    return `<section class="day"><h2>${esc(fmtDate(g.date))}<span class="dow">${esc(dow)}</span></h2>${macroLine(g.date)}<div class="cards">${g.items.map(card).join("")}</div></section>`;
   }).join("");
 }
 function card(p){
